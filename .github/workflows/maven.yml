@@ -1,0 +1,42 @@
+
+name: project cicd flow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: '1.8'
+        distribution: 'adopt'
+        cache: maven
+    - name: Build with Maven
+      run: mvn clean install
+    - name: Unit and Fundamental Testing
+      run: mvn test
+    - name: Performance Testing
+      run: mvn verify -P performance-tests
+       
+       # Docker Build and Tag
+    - name: Docker Build
+      run: |
+        docker build -t my-app:latest .
+        docker tag my-app:latest 18.224.153.244:8081/nchandru360/gitactions/my-app:latest
+    # Docker Login to Nexus
+    - name: Docker Login to Nexus
+      run: |
+         echo "${{ secrets.NEXUS_PASSWORD }}" | docker login 18.224.153.244:8081 -u "${{ secrets.NEXUS_USERNAME }}" --password-stdin
+ 
+      # Docker Push to Nexus
+    - name: Docker Push to Nexus
+      run: docker push 18.224.153.244:8081/repository/test/my-app:latest
